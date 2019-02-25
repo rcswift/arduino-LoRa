@@ -46,6 +46,7 @@
 #define MODE_TX                  0x03
 #define MODE_RX_CONTINUOUS       0x05
 #define MODE_RX_SINGLE           0x06
+#define MODE_CAD                 0x07
 
 // PA config
 #define PA_BOOST                 0x80
@@ -54,6 +55,8 @@
 #define IRQ_TX_DONE_MASK           0x08
 #define IRQ_PAYLOAD_CRC_ERROR_MASK 0x20
 #define IRQ_RX_DONE_MASK           0x40
+#define IRQ_CAD_DONE_MASK          0x04
+#define IRQ_CAD_DETECTED_MASK      0x01
 
 #define MAX_PKT_LENGTH           255
 
@@ -203,6 +206,33 @@ bool LoRaClass::isTransmitting()
   return false;
 }
 
+bool LoRaClass::isChannelActive()
+{
+  uint8_t irqFlags;
+
+  // put it in CAD mode
+  writeRegister(REG_OP_MODE, MODE_LONG_RANGE_MODE | MODE_CAD);
+  
+  do {
+    yield();
+    irqFlags = readRegister(REG_IRQ_FLAGS);
+  } while ((irqFlags & IRQ_CAD_DONE_MASK) == 0);
+
+  // clear IRQs
+  writeRegister(REG_IRQ_FLAGS, IRQ_CAD_DONE_MASK | IRQ_CAD_DETECTED_MASK);
+  
+  return (irqFlags & IRQ_CAD_DETECTED_MASK) != 0;
+}
+
+int LoRaClass::waitCAD(bool async)
+{
+  while(isChannelActive()) {
+    yield();
+  }
+
+  return endPacket(async);
+}
+
 int LoRaClass::parsePacket(int size)
 {
   int packetLength = 0;
@@ -316,6 +346,19 @@ int LoRaClass::read()
   _packetIndex++;
 
   return readRegister(REG_FIFO);
+}
+
+int LoRaClass::read(uint8_t *buffer, size_t size)
+{
+  for(size_t i = 0; i < size; i++) {
+    if(available()) {
+      buffer[i] = read();
+    } else {
+      return -1;
+    }
+  }
+
+  return size;
 }
 
 int LoRaClass::peek()

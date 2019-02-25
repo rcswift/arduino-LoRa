@@ -46,6 +46,7 @@ public:
   // from Stream
   virtual int available();
   virtual int read();
+  virtual int read(uint8_t *buffer, size_t size);
   virtual int peek();
   virtual void flush();
 
@@ -68,6 +69,9 @@ public:
   void disableCrc();
   void enableInvertIQ();
   void disableInvertIQ();
+
+  bool isChannelActive();
+  int waitCAD(bool async = false);
   
   void setOCP(uint8_t mA); // Over Current Protection control
 
