@@ -227,7 +227,7 @@ bool LoRaClass::isChannelActive()
 int LoRaClass::waitCAD(bool async)
 {
   while(isChannelActive()) {
-    yield();
+    delay(random(50));
   }
 
   return endPacket(async);
@@ -621,11 +621,6 @@ void LoRaClass::setOCP(uint8_t mA)
   }
 
   writeRegister(REG_OCP, 0x20 | (0x1F & ocpTrim));
-}
-
-byte LoRaClass::random()
-{
-  return readRegister(REG_RSSI_WIDEBAND);
 }
 
 void LoRaClass::setPins(int ss, int reset, int dio0)
