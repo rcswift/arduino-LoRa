@@ -686,7 +686,7 @@ void LoRaClass::handleDio0Rise()
     }
 
     // reset FIFO address
-    writeRegister(REG_FIFO_ADDR_PTR, 0);
+//     writeRegister(REG_FIFO_ADDR_PTR, 0);
   }
 }
 
